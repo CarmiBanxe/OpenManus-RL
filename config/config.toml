@@ -1,0 +1,135 @@
+# BANXE Private Legion Engine — OpenManus config
+# Artifact status: DRAFT — operator must review + copy to /home/mmber/OpenManus/config/config.toml
+# Branch: agent/factory/private-engine/openmanus-config
+# Created: 2026-07-11 | Updated: 2026-07-11 (T1c — llama-server GGUF uncensored)
+#
+# ENGINE PROFILE: AUTONOMOUS LOCAL — primary inference via llama-server :8080 (GGUF on Legion).
+# This is NOT a light single-model assistant.
+# Primary [llm]     = Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-IQ2_M via llama-server :8080
+# Vision  [llm.vision] = Huihui-gemma-4-12B-it-abliterated-IQ4_XS      via llama-server :8081
+# Fallback tier     = evo2/evo1 via LiteLLM :4000 (operator switches when local is unavailable).
+#
+# WHY llama-server instead of Ollama:
+#   HauhauCS-Aggressive is NOT in Ollama registry — only GGUF files for llama-server.
+#   llama-server provides OpenAI-compat /v1 API (identical interface to Ollama :11434).
+#
+# NOTE: "banxe-general" is intentionally NOT used here — it is reserved for the Banking Engine.
+# IPv4 only: LiteLLM listens on 0.0.0.0:4000 (IPv4); IPv6 ::1:4000 is refused — use 127.0.0.1.
+#
+# CONFLICT WARNING: Ollama (qwen2.5-coder:7b = 4.7GB VRAM) must be stopped before
+#   launching llama-server or VRAM overflow will occur.
+#   PRE-FLIGHT: systemctl stop ollama
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# MULTI-LAYER MODEL MAP
+# ─────────────────────────────────────────────────────────────────────────────
+# VRAM NOTE: Legion RTX 4070 Laptop = 8188 MiB VRAM + 54GB RAM.
+#   Qwen3.6-35B-A3B IQ2_M = 11.7 GB GGUF; 40 layers; ~292 MB/layer.
+#   GPU+RAM offload: -ngl 20 → ~5.8 GB VRAM (20 layers); remainder ~5.8 GB in RAM.
+#   KV-cache q8_0 at ctx=131072: ~5-8 GB RAM. Total RAM: ~13 GB of 64 GB. ✅
+#   Gemma-4-12B IQ4_XS = 6.8 GB. Fits fully in VRAM (-ngl 99). Sequential only (not simultaneous).
+#
+# MODEL FILES:
+#   https://huggingface.co/HauhauCS/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive
+#     → Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-IQ2_M.gguf         (11.7 GB)
+#     → mmproj-Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-f16.gguf    (899 MB, vision)
+#   https://huggingface.co/mradermacher/Huihui-gemma-4-12B-it-abliterated-GGUF
+#     → Huihui-gemma-4-12B-it-abliterated.IQ4_XS.gguf                     (6.8 GB)
+#
+# TIER 1 — Primary: LOCAL autonomous (DEFAULT, llama-server :8080, GPU+RAM offload):
+#   GGUF:    ~/models/qwen36-35b-aggressive/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-IQ2_M.gguf
+#   base_url = "http://127.0.0.1:8080/v1"   ← llama-server, OpenAI-compat
+#   VRAM:    ~5.8 GB (20 GPU layers); remainder in 54 GB RAM
+#   MCPMark tool-use score: 37.0% (vs 18.1% Gemma) — key for OpenManus agent loops
+#   Context: 262K tokens; function calling: native
+#   Use: main autonomous agent loop — web browsing, tool use, multi-step planning.
+#   LAUNCH: see RUNBOOK.md §Phase 2 — llama-server launch command
+#
+# TIER 1b — Vision/fast (12B, sequential with Tier 1, llama-server :8081):
+#   GGUF:    ~/models/gemma4-12b-abliterated/Huihui-gemma-4-12B-it-abliterated.IQ4_XS.gguf
+#   base_url = "http://127.0.0.1:8081/v1"
+#   VRAM:    6.8 GB (fits fully, -ngl 99). Start after stopping Tier 1 llama-server.
+#
+# TIER 1c — Local coding fallback (7B, Ollama — start after stopping llama-server):
+#   model    = "qwen2.5-coder:7b-instruct-q4_K_M"
+#   base_url = "http://127.0.0.1:11434/v1"   ← Ollama (must start ollama first)
+#   NOTE: Cannot run simultaneously with llama-server (VRAM conflict)
+#
+# TIER 2 — Fallback: remote via LiteLLM :4000 → evo2/evo1 (when local unavailable):
+#   alias = "qwen3-30b"   → qwen3:30b-a3b on evo2 (18GB VRAM, standard/censored)
+#   alias = "project-mid" → alternate mid-tier routing
+#   base_url = "http://127.0.0.1:4000/v1"
+#   api_key  = "sk-banxe-llm-gateway-2026"
+#
+# TIER 3 — Heavy reasoning (remote via :4000 → evo1/evo2):
+#   alias = "reasoning"       → qwen3 heavy on evo1/evo2
+#   alias = "reasoning-235b"  → qwen3:235b-a22b (142GB on evo2) — maximum depth
+#
+# OPERATOR TIER-SWITCH (change [llm] block — only one base_url active at a time):
+#   Tier 1 local (DEFAULT):  base_url="http://127.0.0.1:8080/v1"   api_key="none"  (llama-server)
+#   Tier 1b vision local:    base_url="http://127.0.0.1:8081/v1"   api_key="none"  (llama-server)
+#   Tier 1c coding local:    base_url="http://127.0.0.1:11434/v1"  api_key="none"  (Ollama)
+#   Tier 2 fallback:         base_url="http://127.0.0.1:4000/v1"   api_key="sk-banxe-llm-gateway-2026"
+#   Tier 3 heavy:            base_url="http://127.0.0.1:4000/v1"   model="reasoning"
+#
+# BANNED: "banxe-general" — RESERVED for Banking Engine. Never appear in this file.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# DLP HARD RULE (Correction 4 / ADR-103):
+#   - NEVER place banking credentials, Postgres password, customer PII, or IBANs here.
+#   - NEVER grant Legion write access to banking ledger from this config.
+#   - api_key MUST be LiteLLM master key ONLY (not banking service credentials).
+#
+# SCHEMA NOTE: OpenManus config.toml supports exactly two LLM blocks: [llm] and [llm.vision].
+#   There is no per-agent named profile support in the TOML config. Tier-switching is done
+#   by editing [llm].model (operator action). Per-agent routing can be implemented by
+#   wrapping api_server.py to accept a "model_tier" param and call LiteLLM directly —
+#   see RUNBOOK.md §Advanced for the pattern.
+
+[llm]
+# ACTIVE TIER: Tier 1 — Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-IQ2_M via llama-server :8080.
+# PRE-FLIGHT (operator, I-71):
+#   systemctl stop ollama          ← free 4.7GB VRAM from qwen2.5-coder:7b
+#   huggingface-cli download HauhauCS/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive \
+#     Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-IQ2_M.gguf \
+#     mmproj-Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-f16.gguf \
+#     --local-dir ~/models/qwen36-35b-aggressive --local-dir-use-symlinks False
+#   llama-server -m ~/models/qwen36-35b-aggressive/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-IQ2_M.gguf \
+#     --mmproj ~/models/qwen36-35b-aggressive/mmproj-Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-f16.gguf \
+#     --jinja -c 131072 -ngl 20 --flash-attn \
+#     --cache-type-k q8_0 --cache-type-v q8_0 --host 0.0.0.0 --port 8080
+# Fallback: switch base_url="http://127.0.0.1:4000/v1" + model="qwen3-30b" + api_key="sk-banxe-llm-gateway-2026"
+api_type    = "openai"
+model       = "qwen3.6-35b-hauhaucs"
+base_url    = "http://127.0.0.1:8080/v1"
+api_key     = "none"
+max_tokens  = 8192
+temperature = 0.6
+top_p       = 0.95
+
+[llm.vision]
+# Vision tasks (browser screenshots, image analysis) — Gemma-4-12B abliterated via llama-server :8081.
+# PRE-FLIGHT (operator, I-71):
+#   huggingface-cli download mradermacher/Huihui-gemma-4-12B-it-abliterated-GGUF \
+#     Huihui-gemma-4-12B-it-abliterated.IQ4_XS.gguf \
+#     --local-dir ~/models/gemma4-12b-abliterated --local-dir-use-symlinks False
+#   llama-server -m ~/models/gemma4-12b-abliterated/Huihui-gemma-4-12B-it-abliterated.IQ4_XS.gguf \
+#     --jinja -c 65536 -ngl 99 --flash-attn --host 0.0.0.0 --port 8081
+# NOTE: Run INSTEAD of Tier 1 (VRAM conflict — cannot run both simultaneously).
+api_type    = "openai"
+model       = "gemma-4-12b-abliterated"
+base_url    = "http://127.0.0.1:8081/v1"
+api_key     = "none"
+max_tokens  = 4096
+temperature = 0.6
+
+[sandbox]
+# OpenManus browser/bash sandbox isolation.
+# Operator MUST review OpenManus docs for sandbox config before enabling browser tools.
+use_sandbox = false
+
+[browser]
+# Headless browser support — disabled until operator enables Playwright install.
+headless  = true
+width     = 1280
+height    = 800

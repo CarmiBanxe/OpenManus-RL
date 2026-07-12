@@ -1,7 +1,7 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Optional, Tuple
-
+import json
 import requests
 
 from .memory import SimpleMemory
@@ -17,26 +17,27 @@ def simple_summarize(
     model: str = "gpt-4o",
     timeout_s: int = 30,
 ) -> str:
-    """Summarize history steps using the OpenAI Chat Completions API.
+    """Summarize history steps using LLM Chat Completions API.
+    
+    Modified to work with Ollama local instance when endpoint contains '11434' or OLLAMA_HOST is set.
 
     Args:
         history_steps: List of formatted history strings.
-        api_key: OpenAI API key.
-        endpoint: Optional OpenAI base URL (defaults to public endpoint).
+        api_key: OpenAI API key (not needed for Ollama).
+        endpoint: API base URL (defaults to OpenAI, works with Ollama).
         env_type: Environment type hint for prompt selection.
-        model: Target OpenAI model name.
+        model: Target model name.
         timeout_s: HTTP timeout in seconds.
 
     Returns:
         Summarized history string.
     """
-    if not api_key:
-        # Fallback: return truncated recent history
-        return "\n".join(history_steps[-3:])  # Last 3 steps
+    # Check if using Ollama
+    is_ollama = (endpoint and "11434" in endpoint) or (endpoint and "localhost" in endpoint)
     
     # Join all history into one text
     full_history = "\n".join(history_steps)
-    
+
     env_type_norm = (env_type or "").strip().lower()
     if env_type_norm.startswith("webshop") or env_type_norm == "webshop":
         prompt = f"""
@@ -81,29 +82,49 @@ History to summarize:
 """
 
     try:
-        base_url = endpoint.rstrip("/") if endpoint else "https://api.openai.com/v1"
-        url = f"{base_url}/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You summarize task progress concisely with factual, structured outputs.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-            "max_tokens": 300,
-            "temperature": 0.1,
-        }
+        if is_ollama:
+            # Use Ollama API format
+            url = f"{endpoint.rstrip('/')}/api/generate"
+            headers = {"Content-Type": "application/json"}
+            payload = {
+                "model": model,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.1,
+                    "num_predict": 300,
+                }
+            }
+        else:
+            # Use OpenAI API format
+            base_url = endpoint.rstrip("/") if endpoint else "https://api.openai.com/v1"
+            url = f"{base_url}/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "model": model,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You summarize task progress concisely with factual, structured outputs.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                "max_tokens": 300,
+                "temperature": 0.1,
+            }
 
         response = requests.post(url, headers=headers, json=payload, timeout=timeout_s)
 
         if response.status_code == 200:
-            content = response.json()["choices"][0]["message"]["content"]
+            if is_ollama:
+                # Parse Ollama response
+                content = response.json()["response"]
+            else:
+                # Parse OpenAI response
+                content = response.json()["choices"][0]["message"]["content"]
             logger.debug("Summary generated: %d chars", len(content))
             return content.strip()
         logger.warning("API error %s, using fallback", response.status_code)
@@ -118,19 +139,21 @@ class SummarizedMemory(SimpleMemory):
     """
     Memory manager with summarization capability.
     Inherits from SimpleMemory and adds optional history summarization.
+    Enhanced for better Ollama integration and memory efficiency.
     """
-    
+
     def __init__(self):
         super().__init__()
         self.summaries = []  # Cache summaries for each environment
         self.last_summary_step = []  # Track when each env was last summarized
-        
+        self.ollama_endpoint = None  # Cache Ollama endpoint for performance
+
     def reset(self, batch_size: int):
         """Reset memory and summary caches."""
         super().reset(batch_size)
         self.summaries = [None] * batch_size
         self.last_summary_step = [0] * batch_size
-        
+
     def fetch(
         self,
         history_length: int,
@@ -147,22 +170,22 @@ class SummarizedMemory(SimpleMemory):
     ) -> Tuple[List[str], List[int]]:
         """
         Fetch history with optional summarization.
-        
+
         Strategy:
-        - 1 step: return original history (no summarization needed)  
+        - 1 step: return original history (no summarization needed)
         - >1 steps: return summarized history (information compression)
-        
+
         Args:
             history_length: Max steps for regular mode (ignored in summary mode)
             obs_key: Key for observations
-            action_key: Key for actions  
+            action_key: Key for actions
             use_summary: Whether to use summarization
-            summary_api_key: API key for LLM
+            summary_api_key: API key for LLM (not needed for Ollama)
             summary_endpoint: API endpoint for LLM
             summary_model: Optional model/deployment identifier for the LLM
             env_type: Optional environment identifier (affects prompt template)
             summary_concurrency: Optional concurrency hint for summary generation
-            
+
         Returns:
             Tuple of (memory_contexts, valid_lengths)
         """
@@ -171,7 +194,11 @@ class SummarizedMemory(SimpleMemory):
         if not use_summary:
             # Use original SimpleMemory behavior
             return super().fetch(history_length, obs_key, action_key)
-            
+
+        # Cache Ollama endpoint for performance
+        if summary_endpoint and not self.ollama_endpoint:
+            self.ollama_endpoint = summary_endpoint
+
         return self._fetch_with_summary(
             obs_key,
             action_key,
@@ -181,10 +208,10 @@ class SummarizedMemory(SimpleMemory):
             env_type,
             summary_concurrency,
         )
-    
+
     def _fetch_with_summary(
-        self, 
-        obs_key: str, 
+        self,
+        obs_key: str,
         action_key: str,
         api_key: str,
         endpoint: str,
@@ -211,18 +238,22 @@ class SummarizedMemory(SimpleMemory):
                 memory_contexts[env_idx] = self.summaries[env_idx]
 
         if to_update:
-            max_workers = max(1, summary_concurrency or 1)
+            # Limit concurrency to avoid overwhelming Ollama
+            is_ollama = (endpoint and "11434" in endpoint) or (endpoint and "localhost" in endpoint)
+            max_workers = max(1, min(summary_concurrency or 1, 2 if is_ollama else 4))
 
             def _summ_one(item):
                 idx, history_steps = item
                 try:
+                    # Use qwen2.5:7b-instruct as default for Ollama
+                    model_name = summary_model or ("qwen2.5:7b-instruct" if is_ollama else "gpt-4o")
                     summary_text = simple_summarize(
                         history_steps,
                         api_key=api_key,
                         endpoint=endpoint,
                         env_type=env_type,
-                        model=summary_model or "gpt-4o",
-                        timeout_s=30,
+                        model=model_name,
+                        timeout_s=60 if is_ollama else 30,  # Longer timeout for Ollama
                     )
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.warning("Summary generation failed for env %s: %s", idx, exc)
@@ -238,11 +269,11 @@ class SummarizedMemory(SimpleMemory):
                     memory_contexts[idx] = summary_text
 
         return memory_contexts, valid_lengths
-    
+
     def _get_or_create_summary(
-        self, 
-        env_idx: int, 
-        obs_key: str, 
+        self,
+        env_idx: int,
+        obs_key: str,
         action_key: str,
         api_key: str,
         endpoint: str,
@@ -251,13 +282,15 @@ class SummarizedMemory(SimpleMemory):
         # This method is retained for backward compatibility but now delegates to
         # _fetch_with_summary, which handles caching and batching.
         history_steps = self._build_history(env_idx, obs_key, action_key)
+        is_ollama = (endpoint and "11434" in endpoint) or (endpoint and "localhost" in endpoint)
+        model_name = "qwen2.5:7b-instruct" if is_ollama else "gpt-4o"
         summary_text = simple_summarize(
             history_steps,
             api_key=api_key,
             endpoint=endpoint,
             env_type=None,
-            model="gpt-4o",
-            timeout_s=30,
+            model=model_name,
+            timeout_s=60 if is_ollama else 30,
         )
         self.summaries[env_idx] = summary_text
         self.last_summary_step[env_idx] = len(self._data[env_idx])

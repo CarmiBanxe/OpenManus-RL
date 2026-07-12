@@ -8,7 +8,7 @@ import contextlib
 
 import threading
 from openmanus_rl.tools.base import BaseTool
-from openmanus_rl.engines.factory import create_llm_engine
+from openmanus_rl.engines.ollama_engine import create_llm_engine
 
 import signal
 from contextlib import contextmanager

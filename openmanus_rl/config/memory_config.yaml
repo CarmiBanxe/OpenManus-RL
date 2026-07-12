@@ -1,0 +1,44 @@
+# Memory Configuration for OpenManus RL
+# Optimized for local Ollama instance with qwen2.5:7b-instruct
+
+# General memory settings
+memory:
+  # Enable summarization by default
+  use_summary: true
+  
+  # Model settings
+  model: "qwen2.5:7b-instruct"
+  endpoint: "http://localhost:11434"
+  api_key: null  # Not needed for Ollama
+  
+  # Performance settings
+  summary_concurrency: 1  # Reduced for local model stability
+  timeout_s: 60  # Increased timeout for local model
+  
+  # Memory optimization
+  max_history_length: 20  # Maximum steps before summarization
+  summary_threshold: 5    # Minimum steps before attempting summarization
+  
+  # Environment-specific settings
+  environments:
+    webshop:
+      prompt_style: "webshop"
+      max_summary_length: 700
+    alfworld:
+      prompt_style: "alfred"
+      max_summary_length: 600
+    default:
+      prompt_style: "alfred"
+      max_summary_length: 600
+
+# Advanced settings
+advanced:
+  # Enable memory compression for long conversations
+  enable_compression: true
+  
+  # Cache summaries for faster retrieval
+  cache_summaries: true
+  
+  # Fallback behavior when summarization fails
+  fallback_to_recent: true
+  fallback_steps: 3

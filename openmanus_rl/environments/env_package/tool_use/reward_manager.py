@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from collections import defaultdict
 
 try:
-    from openmanus_rl.engines.openai import ChatOpenAI
+    from openmanus_rl.engines.ollama_engine import create_llm_engine
     HAS_LLM_ENGINE = True
 except ImportError:
     HAS_LLM_ENGINE = False
@@ -34,7 +34,7 @@ class LLMJudgeRewardManager:
         self.llm_engine = None
         if HAS_LLM_ENGINE:
             try:
-                self.llm_engine = ChatOpenAI(
+                self.llm_engine = create_llm_engine(model_string=model_string, is_multimodal=False)
                     model_string=model_string,
                     is_multimodal=False,
                     enable_cache=True
