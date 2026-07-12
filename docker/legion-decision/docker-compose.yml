@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  legion-decision:
+    build: .
+    container_name: legion-decision
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - VLLM_BASE_URL=http://host.docker.internal:8082
+      - WHISPER_MODEL=faster-whisper-large-v3-turbo
+      - TTS_MODEL=kokoro-82m
+      - GPU_DEVICE=0
+      - ROCM_PATH=/opt/rocm
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+    ports:
+      - "8000:8000"
+      - "8080:8080"
+      - "8082:8082"
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    privileged: true
+    restart: unless-stopped
+    depends_on:
+      - spiderfoot
+
+  spiderfoot:
+    image: spiderfoot/spiderfoot:latest
+    container_name: spiderfoot
+    ports:
+      - "5009:5009"
+    restart: unless-stopped
