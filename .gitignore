@@ -49,3 +49,4 @@ docs/sphinx/_build/
 *.bak
 *.backup
 sprint_validation_report.md
+config/performance.toml
