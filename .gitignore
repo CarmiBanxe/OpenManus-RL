@@ -46,3 +46,6 @@ backups/
 
 # sphinx build output
 docs/sphinx/_build/
+*.bak
+*.backup
+sprint_validation_report.md
