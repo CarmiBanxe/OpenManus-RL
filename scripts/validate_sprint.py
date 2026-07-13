@@ -45,6 +45,9 @@ SUITES: Dict[str, List[str]] = {
     "metrics": [
         "tests/integration/test_metrics.py",
     ],
+    "docs": [
+        "tests/integration/test_docs_build.py",
+    ],
 }
 
 _COUNT_RE = {
