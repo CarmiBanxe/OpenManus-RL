@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        run: pip install ruff
+      - name: Ruff (syntax + undefined names, fatal only)
+        # Scope — код, который мы авторим/поддерживаем (вендоренные env_package/tools исключены:
+        # в них предсуществующие F821 из upstream, не наши).
+        run: >
+          ruff check --select E9,F63,F7,F82
+          scripts tests ui config
+          openmanus_rl/agents openmanus_rl/api openmanus_rl/auth openmanus_rl/config.py
+          openmanus_rl/decision openmanus_rl/integration openmanus_rl/optimization
+
+  unit:
+    # Лёгкие тесты без тяжёлых ML-зависимостей — быстрый гарантированный сигнал.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install light deps
+        run: pip install pytest pyyaml fastapi "uvicorn[standard]" pyjwt bcrypt httpx
+      - name: Light unit tests (config + validators)
+        run: |
+          python -m pytest \
+            tests/unit/test_config.py \
+            tests/unit/test_validate_sprint.py \
+            tests/unit/test_security_validator.py -v
+
+  integration:
+    # Тяжёлые тесты (строят агента: torch/transformers/gradio) — best-effort.
+    # torch ставится CPU-only (на runner нет GPU). Не блокирует CI при инфра-флаки.
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install CPU-only torch stack
+        run: pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
+      - name: Install project deps
+        run: |
+          pip install -r requirements-legion.txt
+          pip install fastapi "uvicorn[standard]" pyjwt bcrypt streamlit gradio pytest pyyaml
+      - name: Sprint validation (real pytest via validator)
+        continue-on-error: true
+        run: python scripts/validate_sprint.py --sprint all
