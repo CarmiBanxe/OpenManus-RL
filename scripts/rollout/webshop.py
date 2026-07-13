@@ -246,7 +246,7 @@ if __name__ == "__main__":
                                         task_text = env.tasks[i]
                                     except Exception:
                                         task_text = "unknown"
-                                    task_hash = hashlib.sha1(task_text.encode("utf-8")).hexdigest()[:8]
+                                    task_hash = hashlib.sha1(task_text.encode("utf-8"), usedforsecurity=False).hexdigest()[:8]
 
                                     unique_id = f"g{global_env_counter + i}-b{b:03d}_t{t:02d}_e{i:02d}-{task_hash}"
                                     out_path = os.path.join(chat_base_dir, f"chat_{unique_id}.json")
@@ -309,7 +309,7 @@ if __name__ == "__main__":
                                     task_text = env.tasks[i]
                                 except Exception:
                                     task_text = "unknown"
-                                task_hash = hashlib.sha1(task_text.encode("utf-8")).hexdigest()[:8]
+                                task_hash = hashlib.sha1(task_text.encode("utf-8"), usedforsecurity=False).hexdigest()[:8]
 
                                 unique_id = f"g{global_env_counter + i}-b{b:03d}_t{t:02d}_e{i:02d}-{task_hash}"
                                 out_path = os.path.join(chat_base_dir, f"chat_{unique_id}.json")

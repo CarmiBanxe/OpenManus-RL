@@ -699,7 +699,7 @@ def main():
                                 # Save chat history
                                 if chat_base_dir and not saved_flags[i]:
                                     try:
-                                        task_hash = hashlib.sha1(str(task_id).encode()).hexdigest()[:8]
+                                        task_hash = hashlib.sha1(str(task_id).encode(), usedforsecurity=False).hexdigest()[:8]
                                         unique_id = f"b{batch_idx:03d}_t{test_idx:02d}_e{i:02d}-{task_hash}"
                                         out_path = os.path.join(chat_base_dir, f"chat_{unique_id}.json")
                                         
@@ -729,7 +729,7 @@ def main():
                                 # Save memory history aligned with this episode
                                 if memory_base_dir:
                                     try:
-                                        task_hash = hashlib.sha1(str(task_id).encode()).hexdigest()[:8]
+                                        task_hash = hashlib.sha1(str(task_id).encode(), usedforsecurity=False).hexdigest()[:8]
                                         unique_id = f"b{batch_idx:03d}_t{test_idx:02d}_e{i:02d}-{task_hash}"
                                         mem_out_path = os.path.join(memory_base_dir, f"memory_{unique_id}.json")
 
@@ -790,7 +790,7 @@ def main():
                         for i in range(current_batch_size):
                             if not saved_flags[i]:
                                 try:
-                                    task_hash = hashlib.sha1(f"unfinished_{i}".encode()).hexdigest()[:8]
+                                    task_hash = hashlib.sha1(f"unfinished_{i}".encode(), usedforsecurity=False).hexdigest()[:8]
                                     unique_id = f"b{batch_idx:03d}_t{test_idx:02d}_e{i:02d}-{task_hash}"
                                     out_path = os.path.join(chat_base_dir, f"chat_{unique_id}.json")
                                     
@@ -823,7 +823,7 @@ def main():
                         for i in range(current_batch_size):
                             if not env_dones[i]:
                                 try:
-                                    task_hash = hashlib.sha1(f"unfinished_{i}".encode()).hexdigest()[:8]
+                                    task_hash = hashlib.sha1(f"unfinished_{i}".encode(), usedforsecurity=False).hexdigest()[:8]
                                     unique_id = f"b{batch_idx:03d}_t{test_idx:02d}_e{i:02d}-{task_hash}"
                                     mem_out_path = os.path.join(memory_base_dir, f"memory_{unique_id}.json")
 

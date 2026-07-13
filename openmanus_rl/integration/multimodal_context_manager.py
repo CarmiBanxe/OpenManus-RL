@@ -224,7 +224,7 @@ class MultimodalContextManager:
             ],
             sort_keys=True,
         )
-        return hashlib.md5(context_str.encode()).hexdigest()
+        return hashlib.md5(context_str.encode(), usedforsecurity=False).hexdigest()
 
     def _cache_context(self, context: Dict[str, Any]) -> None:
         context_id: Optional[str] = context.get("context_id")

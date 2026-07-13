@@ -289,5 +289,5 @@ class SignatureMethods:
     # ------------------------------------------------------------------
 
     def _signature_cache_key(self, path: np.ndarray, depth: int) -> str:
-        digest = hashlib.md5(path.tobytes() + str(depth).encode()).hexdigest()  # noqa: S324
+        digest = hashlib.md5(path.tobytes() + str(depth).encode(), usedforsecurity=False).hexdigest()  # noqa: S324
         return digest
