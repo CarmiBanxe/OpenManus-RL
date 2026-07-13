@@ -1,0 +1,54 @@
+# Конфигурация LiteLLM для OpenManus — ОБРАЗЕЦ.
+# ВАЖНО: живой конфиг работающего LiteLLM находится в
+# ~/MetaClaw/litellm/litellm-config.v2.yaml (его не трогаем).
+# Секрет master_key берётся из окружения (${LITELLM_MASTER_KEY}), в репо не хранится.
+model_list:
+  # OpenAI
+  - model_name: "gpt-3.5-turbo"
+    litellm_params:
+      model: "openai/gpt-3.5-turbo"
+      api_base: "https://api.openai.com/v1"
+
+  - model_name: "gpt-4"
+    litellm_params:
+      model: "openai/gpt-4"
+      api_base: "https://api.openai.com/v1"
+
+  # Together
+  - model_name: "togethercomputer/llama-2-7b-chat"
+    litellm_params:
+      model: "togethercomputer/llama-2-7b-chat"
+      api_base: "https://api.together.xyz/v1"
+
+  - model_name: "togethercomputer/llama-2-13b-chat"
+    litellm_params:
+      model: "togethercomputer/llama-2-13b-chat"
+      api_base: "https://api.together.xyz/v1"
+
+  # Ollama (локальный, :11434)
+  - model_name: "ollama-qwen2.5"
+    litellm_params:
+      model: "ollama/qwen2.5:7b-instruct"
+      api_base: "http://localhost:11434"
+
+  - model_name: "ollama-llama2"
+    litellm_params:
+      model: "ollama/llama2:7b"
+      api_base: "http://localhost:11434"
+
+router_settings:
+  routing_strategy: "weighted-round-robin"
+  model_group_alias:
+    gpt-3.5-turbo:
+      - "openai/gpt-3.5-turbo"
+      - "togethercomputer/llama-2-7b-chat"
+      - "ollama-qwen2.5"
+    gpt-4:
+      - "openai/gpt-4"
+      - "togethercomputer/llama-2-13b-chat"
+      - "ollama-llama2"
+
+general_settings:
+  # Плейсхолдер: подставляется из переменной окружения при запуске LiteLLM.
+  master_key: "${LITELLM_MASTER_KEY}"
+  log_level: "INFO"
