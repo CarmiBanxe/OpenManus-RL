@@ -48,6 +48,9 @@ SUITES: Dict[str, List[str]] = {
     "docs": [
         "tests/integration/test_docs_build.py",
     ],
+    "network": [
+        "tests/unit/test_network_validator.py",
+    ],
 }
 
 _COUNT_RE = {
