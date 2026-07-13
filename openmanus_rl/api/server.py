@@ -15,9 +15,11 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+from openmanus_rl.monitoring import metrics as _metrics
 
 from openmanus_rl.agents.enhanced_decision_agent import EnhancedDecisionAgent
 from openmanus_rl.auth.dependencies import get_current_user, init_jwt_auth
@@ -143,6 +145,23 @@ async def get_config(user: str = Depends(get_current_user)) -> Dict[str, Any]:
     safe_keys = ("environment", "host", "port", "enable_mean_field_games",
                  "enable_performance_optimization", "cors_allow_origins", "gradio_share")
     return {k: cfg.get(k) for k in safe_keys}
+
+
+@app.middleware("http")
+async def _metrics_middleware(request, call_next):
+    import time as _t
+    start = _t.perf_counter()
+    response = await call_next(request)
+    _metrics.record_request(request.method, request.url.path,
+                            response.status_code, _t.perf_counter() - start)
+    return response
+
+
+@app.get("/metrics")
+async def metrics_endpoint(user: str = Depends(get_current_user)) -> Response:
+    # Красная линия (S-18 §1.2): /metrics ТОЛЬКО за аутентификацией, не публичный.
+    body, content_type = _metrics.render()
+    return Response(content=body, media_type=content_type)
 
 
 if __name__ == "__main__":

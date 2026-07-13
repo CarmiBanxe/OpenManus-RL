@@ -1,0 +1,15 @@
+# Prometheus — приватный Legion-контур. Скрейпит защищённый /metrics OpenManus.
+# Prometheus сам должен слушать localhost: запускать с --web.listen-address=127.0.0.1:9090
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: openmanus
+    scheme: http
+    metrics_path: /metrics
+    # /metrics за JWT-auth (красная линия) — токен в файле, не inline, не в git.
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/openmanus_token
+    static_configs:
+      - targets: ["127.0.0.1:8000"]   # только localhost, не публичный таргет
