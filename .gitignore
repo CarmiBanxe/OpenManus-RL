@@ -43,3 +43,6 @@ AGENTS.md
 CLAUDE.md
 # local backups (may contain config.toml — do not commit)
 backups/
+
+# sphinx build output
+docs/sphinx/_build/
