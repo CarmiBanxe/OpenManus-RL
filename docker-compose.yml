@@ -1,0 +1,28 @@
+# OpenManus — private Legion contour. Порты биндятся ТОЛЬКО на host-localhost (S-18 §1.2).
+# Никакого nginx-wildcard, никаких 0.0.0.0-host-портов, секреты — из env/.env.
+services:
+  openmanus:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"   # достижимо только с localhost хоста, не из сети
+    environment:
+      - OPENMANUS_CONFIG_FILE=production
+      - OPENMANUS_HOST=0.0.0.0            # bind внутри контейнера; изоляция — через маппинг выше
+      - OPENMANUS_SECRET_KEY=${OPENMANUS_SECRET_KEY:?set in .env}
+      - OPENMANUS_ADMIN_USER=${OPENMANUS_ADMIN_USER:?set in .env}
+      - OPENMANUS_ADMIN_PASSWORD_HASH=${OPENMANUS_ADMIN_PASSWORD_HASH:?bcrypt hash in .env}
+      - OPENMANUS_CACHE_REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"   # localhost-only
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_data:
