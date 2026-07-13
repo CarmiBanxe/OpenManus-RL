@@ -41,3 +41,5 @@ nohup_logs_*/
 
 AGENTS.md
 CLAUDE.md
+# local backups (may contain config.toml — do not commit)
+backups/
