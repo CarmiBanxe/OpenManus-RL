@@ -27,3 +27,11 @@ model = "qwen2.5:7b-instruct"
 timeout = 60
 max_concurrent_requests = 2
 gpu_layers = 35
+
+[streaming_litellm]
+base_url = "http://localhost:4000"
+model = "gpt-3.5-turbo"
+timeout = 60
+max_retries = 3
+fallback_models = ["gpt-3.5-turbo", "togethercomputer/llama-2-7b-chat"]
+enable_observability = false

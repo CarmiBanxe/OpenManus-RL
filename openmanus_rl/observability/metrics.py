@@ -8,7 +8,7 @@ Duplicated timeseries при нескольких экземплярах). HTTP-
 import threading
 import time
 from collections import defaultdict, deque
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import psutil
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, start_http_server
@@ -57,6 +57,7 @@ class MetricsCollector:
 
         self._token_windows: Dict[Any, deque] = defaultdict(lambda: deque(maxlen=10))
         self._time_windows: Dict[Any, deque] = defaultdict(lambda: deque(maxlen=10))
+        self._custom_gauges: Dict[str, Gauge] = {}  # динамические gauge'ы (напр. streaming TTFT)
         self._server_started = False
 
     def start_server(self) -> None:
@@ -86,6 +87,24 @@ class MetricsCollector:
 
     def record_fallback(self, engine_type: str, from_model: str, to_model: str) -> None:
         self.fallback_count.labels(engine_type=engine_type, from_model=from_model, to_model=to_model).inc()
+
+    def record_tokens(self, engine_type: str, model: str, tokens: int, direction: str = "output") -> None:
+        """Инкремент счётчика токенов (используется streaming-адаптером)."""
+        if tokens > 0:
+            self.tokens_total.labels(engine_type=engine_type, model=model, direction=direction).inc(tokens)
+
+    def record_custom_metric(self, name: str, value: float, labels: Optional[Dict[str, str]] = None) -> None:
+        """Установить значение произвольного Gauge (напр. streaming TTFT / tokens_per_second).
+
+        Gauge создаётся лениво в собственном реестре; при повторном имени переиспользуется.
+        """
+        labels = labels or {}
+        with self._lock:
+            gauge = self._custom_gauges.get(name)
+            if gauge is None:
+                gauge = Gauge(name, name, sorted(labels.keys()), registry=self._registry)
+                self._custom_gauges[name] = gauge
+        (gauge.labels(**labels) if labels else gauge).set(value)
 
     def update_system_metrics(self) -> None:
         self.system_cpu_usage.set(psutil.cpu_percent())
