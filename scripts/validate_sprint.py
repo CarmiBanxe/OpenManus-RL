@@ -83,6 +83,10 @@ SUITES: Dict[str, List[str]] = {
         "tests/unit/test_tool_calling.py",
         "tests/integration/test_tool_calling_integration.py",
     ],
+    "eval": [
+        "tests/unit/test_eval_harness.py",
+        "tests/integration/test_eval_suites.py",
+    ],
 }
 
 _COUNT_RE = {
