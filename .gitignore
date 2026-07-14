@@ -51,3 +51,10 @@ docs/sphinx/_build/
 sprint_validation_report.md
 config/performance.toml
 config/config.toml
+
+# Memory / conversation stores (Спринт 13)
+*.db
+*.sqlite
+*.sqlite3
+conversations.db
+memory.md
