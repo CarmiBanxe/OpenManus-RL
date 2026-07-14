@@ -75,6 +75,10 @@ SUITES: Dict[str, List[str]] = {
         "tests/unit/test_conversation_memory.py",
         "tests/integration/test_memory_streaming_integration.py",
     ],
+    "rag": [
+        "tests/unit/test_semantic_memory.py",
+        "tests/integration/test_rag_streaming_integration.py",
+    ],
 }
 
 _COUNT_RE = {

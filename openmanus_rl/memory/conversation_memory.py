@@ -44,6 +44,14 @@ class ConversationMemory:
         return [{"role": t["role"], "content": t["content"]}
                 for t in self.backend.search(self.session_id, query, limit)]
 
+    def get_relevant(self, query: str, limit: int = 5) -> List[Dict[str, str]]:
+        """Семантически релевантные turn'ы (S14), если бэкенд умеет; иначе substring."""
+        if hasattr(self.backend, "semantic_search"):
+            hits = self.backend.semantic_search(self.session_id, query, limit)
+        else:
+            hits = self.backend.search(self.session_id, query, limit)
+        return [{"role": h["role"], "content": h["content"]} for h in hits]
+
     def trim_if_needed(self) -> bool:
         """Если turn'ов больше max_turns — сжать (summarize) или усечь старые."""
         if self.backend.count(self.session_id) <= self.max_turns:

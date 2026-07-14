@@ -25,10 +25,19 @@ class MemoryAwareStreamingAdapter:
                  memory: Optional[ConversationMemory] = None) -> None:
         self.config = config or {}
         self.stream = StreamingLiteLLMAdapter(self.config)
+        self.rag = bool(self.config.get("rag", False))
+        self.rag_k = int(self.config.get("rag_k", 5))
         if memory is not None:
             self.memory = memory
         else:
-            backend = SQLiteMemory(self.config.get("memory_db", "conversations.db"))
+            if self.rag:
+                from openmanus_rl.memory.embeddings import OllamaEmbeddingProvider
+                from openmanus_rl.memory.semantic_memory import SemanticMemory
+                backend = SemanticMemory(
+                    OllamaEmbeddingProvider(self.config.get("embed_model", "nomic-embed-text")),
+                    self.config.get("memory_db", "conversations.db"))
+            else:
+                backend = SQLiteMemory(self.config.get("memory_db", "conversations.db"))
             self.memory = ConversationMemory(
                 backend=backend,
                 session_id=self.config.get("session_id", "default"),
@@ -46,7 +55,13 @@ class MemoryAwareStreamingAdapter:
         await self.stream.close()
 
     async def stream_chat(self, messages: List[Dict[str, str]], **kwargs: Any) -> AsyncGenerator[str, None]:
-        context = self.memory.get_context()  # прежние turn'ы (до текущего обмена)
+        # RAG: релевантные по смыслу turn'ы к последнему запросу; иначе — последние N.
+        if self.rag:
+            last_user = next((m["content"] for m in reversed(messages)
+                              if m.get("role") == "user"), None)
+            context = self.memory.get_relevant(last_user, self.rag_k) if last_user else []
+        else:
+            context = self.memory.get_context()  # прежние turn'ы (до текущего обмена)
         for m in messages:
             if m.get("role") == "user":
                 self.memory.store_turn("user", m["content"])
