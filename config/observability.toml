@@ -1,0 +1,25 @@
+# Конфигурация observability для OpenManus
+
+[metrics]
+# Порт для Prometheus метрик (bind 127.0.0.1 при явном start_server)
+port = 9090
+# Интервал обновления системных метрик (сек)
+system_metrics_interval = 30
+
+[logging]
+# Уровень (DEBUG, INFO, WARNING, ERROR)
+level = "INFO"
+# Формат (json, console)
+format = "json"
+
+[health]
+# Порт/хост health-check эндпоинта
+port = 8080
+host = "127.0.0.1"
+# Интервал проверки компонентов (сек)
+check_interval = 30
+
+[engines]
+# observability для движков (дефолт выключено; включается per-config enable_observability)
+enabled = false
+monitored_engines = ["ollama", "openai", "optimized_ollama", "litellm"]
