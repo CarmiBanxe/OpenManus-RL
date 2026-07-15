@@ -93,10 +93,16 @@ cd ~/OpenManus && /home/mmber/hf-env/bin/python scripts/network_validator.py
 **Ожидаемо после исправления:**
 ```
 # Network posture (private Legion contour)
-  ℹ tor_socks_9050 = ...
+  ℹ tor_socks_9050 = ...   ← мониторинг: проверяет ОТСУТСТВИЕ tor-демона, не включает его
 ✅ NETWORK ISOLATION OK
 ```
 (exit 0 — публичных слушателей среди наблюдаемых портов больше нет)
+
+> **SECURITY NOTE (2026-07-15, Charter §8):**
+> Строка `tor_socks_9050` выше — это **только мониторинговый вывод** network_validator'а,
+> который проверяет, что порт 9050 (Tor SOCKS) НЕ прослушивается.
+> Tor / onion / anonymizing transports **ЗАПРЕЩЕНЫ** в этом проекте и несовместимы с
+> Banxe SAFE-PORT charter §8. Tor-демон не установлен и не должен устанавливаться.
 
 Плюс регрессия логики валидатора:
 ```bash

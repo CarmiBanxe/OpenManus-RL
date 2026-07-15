@@ -9,7 +9,6 @@ from transformers import pipeline
 from openmanus_rl.tools.base import BaseTool
 from PIL import Image, ImageOps
 
-import os
 # If CUDA_HOME is set, print the value
 print(os.environ.get('CUDA_HOME', 'CUDA_HOME is not set'))
 

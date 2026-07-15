@@ -1,7 +1,5 @@
 import torch
 import re
-from collections import defaultdict
-import os
 from typing import List, Dict, Any, Tuple
 from dataclasses import dataclass
 from .tensor_helper import TensorHelper, TensorConfig
@@ -12,7 +10,6 @@ import traceback # For error logging
 from concurrent.futures import ThreadPoolExecutor, as_completed # For parallel rollout
 from verl.utils.tracking import Tracking
 from omegaconf import DictConfig # Import DictConfig for type hint
-import numpy as np
 
 @dataclass
 class AgentConfig:
@@ -462,7 +459,7 @@ class OpenManusAgent:
         
         print(f"[Agent.run_llm_loop] Added log_prob parameters to meta_info: micro_batch_size={processed_data.meta_info['micro_batch_size']}, temperature={processed_data.meta_info['temperature']}, use_dynamic_bsz={processed_data.meta_info['use_dynamic_bsz']}")
 
-        print(f"[Agent.run_llm_loop] Finished processing rollout results.")
+        print("[Agent.run_llm_loop] Finished processing rollout results.")
         return processed_data
 
     def _convert_rollout_results_to_dataproto(self, results: List[Dict], original_batch: DataProto) -> DataProto:
@@ -805,7 +802,7 @@ class OpenManusAgent:
         # For now, the new 'task_idx' list converted to a tensor becomes the primary index for these processed samples.
         if 'idx' in final_meta_info and not torch.is_tensor(final_meta_info['idx']):
             # If original idx was not a tensor or needs to be sample-specific for this processed batch
-            print(f"[Agent._convert_rollout] Replacing original 'idx' with new 'task_idx' tensor.")
+            print("[Agent._convert_rollout] Replacing original 'idx' with new 'task_idx' tensor.")
             final_meta_info['idx'] = final_meta_info['task_idx']
         elif 'idx' not in final_meta_info:
             final_meta_info['idx'] = final_meta_info['task_idx']

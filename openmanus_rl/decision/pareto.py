@@ -3,7 +3,7 @@ Pareto optimization for multi-criteria decision making
 """
 
 import logging
-from typing import List, Dict, Any, Tuple, Optional
+from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 

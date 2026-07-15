@@ -2,7 +2,6 @@
 Интеграция фреймворка принятия решений с OpenManus
 """
 
-from typing import Dict, Any, List
 from openmanus_rl.agents.smart_decision_agent import SmartDecisionAgent
 
 class OpenManusDecisionIntegration:

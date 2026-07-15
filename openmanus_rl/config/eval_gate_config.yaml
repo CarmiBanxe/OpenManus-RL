@@ -1,0 +1,27 @@
+# Eval quality gate thresholds — Legion engine (PROP-2026-0714-001)
+# eval_quality_gate.py reads this file and exits non-zero if any threshold is breached.
+# Adjust thresholds here as the eval suite matures.
+
+gate:
+  # Minimum pass rate across all eval cases (0.0 – 1.0)
+  min_pass_rate: 0.80
+
+  # Maximum latency (seconds) for the p95 of eval case run times
+  max_p95_latency_s: 10.0
+
+  # Minimum number of eval cases that must run (guards against empty suite)
+  min_case_count: 5
+
+  # Per-component thresholds (component name → min pass rate)
+  # If a component is not listed here, the global min_pass_rate applies.
+  components:
+    memory: 0.90
+    tools: 0.85
+    agent: 0.80
+    streaming: 0.85
+
+# Regression guard: block if current pass rate drops more than this fraction
+# below the baseline stored in eval_baseline.json (if it exists)
+regression:
+  enabled: true
+  max_regression_fraction: 0.05   # e.g. 0.05 = 5% drop triggers failure

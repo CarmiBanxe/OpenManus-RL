@@ -143,7 +143,7 @@ class OpenmanusRollout(TrajectoryCollector):
                 elif line.lower().startswith('parameters:'):
                     try:
                         params = json.loads(line.split(':', 1)[1].strip())
-                    except:
+                    except (json.JSONDecodeError, ValueError):
                         params = {'query': line.split(':', 1)[1].strip()}
             
             if tool_name and tool_name in self.stage_processor.action.tools:
@@ -371,7 +371,7 @@ def calculate_tool(params):
     try:
         result = eval(params.get('expression', '0'), {"__builtins__": {}})
         return f"Result: {result}"
-    except:
+    except Exception:
         return "Error: Invalid expression"
 
 DEFAULT_TOOLS = {

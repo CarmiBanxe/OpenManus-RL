@@ -168,7 +168,31 @@ Return as JSON array:
                 outcome["time"] *= 0.8
         
         return outcomes
-    
+
+    def _fallback_prediction(self, state: Dict[str, Any], action: str) -> List[Dict[str, Any]]:
+        """Fallback prediction when Ollama is unavailable"""
+        outcomes = [
+            {"reward": 0.6, "cost": 0.4, "time": 0.5},
+            {"reward": 0.4, "cost": 0.3, "time": 0.3},
+            {"reward": 0.2, "cost": 0.2, "time": 0.2}
+        ]
+
+        if "search" in action.lower() or "analyze" in action.lower():
+            outcomes[0]["reward"] *= 1.3
+            outcomes[0]["time"] *= 1.2
+        elif "generate" in action.lower() or "create" in action.lower():
+            outcomes[0]["reward"] *= 1.2
+            outcomes[0]["cost"] *= 1.1
+        elif "optimize" in action.lower() or "improve" in action.lower():
+            outcomes[0]["reward"] *= 1.1
+            outcomes[0]["time"] *= 0.8
+
+        if state.get("urgency", 0) > 0.7:
+            for outcome in outcomes:
+                outcome["time"] *= 0.8
+
+        return outcomes
+
     def update_policy(self, state: Dict[str, Any], action: str, reward: float, next_state: Dict[str, Any]):
         """
         Update policy based on experience

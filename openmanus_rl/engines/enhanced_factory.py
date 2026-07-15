@@ -23,7 +23,6 @@ except ModuleNotFoundError:  # pragma: no cover
 # Реальные классы движков (импорт безопасен: openai-обёртка guarded внутри).
 from openmanus_rl.engines.openai import ChatOpenAI
 from openmanus_rl.engines.optimized_ollama_engine import (
-    OptimizedOllamaEngine,
     create_optimized_ollama_engine,
 )
 

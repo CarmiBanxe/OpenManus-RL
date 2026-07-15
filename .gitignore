@@ -58,3 +58,6 @@ config/config.toml
 *.sqlite3
 conversations.db
 memory.md
+
+# test coverage artifact (do not commit)
+.coverage

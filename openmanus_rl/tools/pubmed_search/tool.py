@@ -68,7 +68,7 @@ class Pubmed_Search_Tool(BaseTool):
                         'keywords': article.keywords,
                         'url': article.url
                     })
-                except:
+                except (AttributeError, KeyError):
                     continue
 
             if len(items) == 0:

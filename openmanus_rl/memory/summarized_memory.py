@@ -1,7 +1,6 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Optional, Tuple
-import json
 import requests
 
 from .memory import SimpleMemory

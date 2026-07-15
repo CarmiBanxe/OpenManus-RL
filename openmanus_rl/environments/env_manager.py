@@ -1,7 +1,4 @@
-from typing import List, Tuple, Dict, Union, Any
-from collections import defaultdict
-import torch
-import numpy as np
+from typing import List, Dict, Any
 from functools import partial
 import os
 from openmanus_rl.environments.prompts import *
@@ -222,7 +219,7 @@ class WebshopEnvironmentManager(EnvironmentManagerBase):
             try:
                 index = parts.index(self.tasks[i])
                 reformatted_obs = " [SEP] ".join(f"'{p}'" for p in parts[index+1:])
-            except:
+            except ValueError:
                 reformatted_obs = text_obs[i]
 
             postprocess_text_obs.append(reformatted_obs)
