@@ -1,0 +1,32 @@
+# Qdrant vector memory configuration — Legion engine (SAFE-PORT, PROP-2026-0714-001)
+# Override any field via QDRANT_* environment variables (see qdrant_memory.py).
+
+qdrant:
+  # Connection (local Qdrant instance; never expose to 0.0.0.0 in prod)
+  host: "127.0.0.1"
+  port: 6333
+  grpc_port: 6334
+  prefer_grpc: false
+  timeout: 5.0
+
+  # Collection settings
+  collection: "legion_memory"
+  vector_size: 768           # match your embedding model output dim
+  distance: "Cosine"         # Cosine | Dot | Euclid
+
+  # Retrieval
+  top_k: 5
+  score_threshold: 0.7       # minimum similarity score to return
+
+  # Embedding model (local Ollama endpoint)
+  embedding_model: "nomic-embed-text"
+  embedding_url: "http://127.0.0.1:11434/api/embeddings"
+  embedding_timeout: 10.0
+
+  # Session namespacing — filter by session_id payload field
+  session_namespace: true
+
+# Fallback: if Qdrant is unavailable, fall back to SQLite keyword search
+fallback:
+  enabled: true
+  sqlite_db: "~/.openmanus/hermes_memory.db"

@@ -14,6 +14,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from openmanus_rl.agent import AgentConfig, LegionAgent
+from openmanus_rl.guardrails.policy import check_request
+from openmanus_rl.middleware.rate_limiter import build_rate_limit_middleware
 
 
 class ChatRequest(BaseModel):
@@ -37,6 +39,8 @@ def _server_config() -> Dict[str, Any]:
 
 def create_agent_app(config: Optional[Dict[str, Any]] = None) -> FastAPI:
     app = FastAPI(title="Legion Agent API")
+    # Rate limiter: config from RATE_LIMIT_* env vars (see middleware/rate_limiter.py)
+    app.add_middleware(build_rate_limit_middleware())
     base_cfg = config or _server_config()
     agents: Dict[str, LegionAgent] = {}
 
@@ -66,6 +70,9 @@ def create_agent_app(config: Optional[Dict[str, Any]] = None) -> FastAPI:
 
     @app.post("/chat")
     def chat(req: ChatRequest, _: None = Depends(require_auth)):
+        violation = check_request(req.message)
+        if violation:
+            raise HTTPException(status_code=400, detail={"policy": violation.rule, "detail": violation.detail})
         try:
             return get_agent(req.session_id).chat(req.message, **(req.params or {}))
         except Exception as exc:  # noqa: BLE001
@@ -73,6 +80,9 @@ def create_agent_app(config: Optional[Dict[str, Any]] = None) -> FastAPI:
 
     @app.post("/stream")
     def stream(req: ChatRequest, _: None = Depends(require_auth)):
+        violation = check_request(req.message)
+        if violation:
+            raise HTTPException(status_code=400, detail={"policy": violation.rule, "detail": violation.detail})
         agent = get_agent(req.session_id)
 
         async def event_stream():
