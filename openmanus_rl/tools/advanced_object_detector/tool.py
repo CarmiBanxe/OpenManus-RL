@@ -162,7 +162,7 @@ class Advanced_Object_Detector_Tool(BaseTool):
                     box = tuple(result["bbox"])
                     try:
                         box = [int(x) for x in box]
-                    except:
+                    except (ValueError, TypeError):
                         continue
                     label = result["category"]
                     score = round(result["score"], 2)
