@@ -93,6 +93,9 @@ SUITES: Dict[str, List[str]] = {
     "entrypoint": [
         "tests/integration/test_agent_server.py",
     ],
+    "security": [
+        "tests/integration/test_security.py",
+    ],
 }
 
 _COUNT_RE = {

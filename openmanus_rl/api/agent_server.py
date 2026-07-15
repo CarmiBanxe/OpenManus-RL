@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from openmanus_rl.agent import AgentConfig, LegionAgent
+from openmanus_rl.api.security import SecurityAudit, install_security
 
 
 class ChatRequest(BaseModel):
@@ -39,6 +40,10 @@ def create_agent_app(config: Optional[Dict[str, Any]] = None) -> FastAPI:
     app = FastAPI(title="Legion Agent API")
     base_cfg = config or _server_config()
     agents: Dict[str, LegionAgent] = {}
+
+    # S19: rate-limit + audit middleware (DIY, без секретов/контента в логах).
+    install_security(app, rate_limit=int(os.environ.get("LEGION_RATE_LIMIT", "120")),
+                     audit=os.environ.get("LEGION_AUDIT", "1").lower() in ("1", "true", "yes"))
 
     def get_agent(session_id: str) -> LegionAgent:
         if session_id not in agents:
@@ -90,6 +95,11 @@ def create_agent_app(config: Optional[Dict[str, Any]] = None) -> FastAPI:
         if req.session_id in agents:
             agents[req.session_id].reset()
         return {"status": "reset", "session_id": req.session_id}
+
+    @app.get("/security/audit")
+    def security_audit(_: None = Depends(require_auth)):
+        findings = SecurityAudit.run(base_cfg, bind_host=os.environ.get("LEGION_BIND", "127.0.0.1"))
+        return SecurityAudit.summary(findings)
 
     return app
 
