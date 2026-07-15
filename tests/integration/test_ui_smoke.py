@@ -8,6 +8,8 @@ import os
 import sys
 import unittest
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from ui import core as ui_core  # noqa: E402
@@ -27,13 +29,13 @@ class TestUiSmoke(unittest.TestCase):
         self.assertIn(result["action"], ["buy", "sell", "wait", "error"])
 
     def test_gradio_build_returns_blocks(self) -> None:
-        import gradio as gr
-
+        gr = pytest.importorskip("gradio")
         from ui.gradio_app import create_ui
         demo = create_ui()
         self.assertIsInstance(demo, gr.Blocks)
 
     def test_streamlit_module_imports(self) -> None:
+        pytest.importorskip("streamlit")
         # import не должен запускать UI (main вызывается только под __main__)
         import ui.streamlit_app  # noqa: F401
 

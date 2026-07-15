@@ -8,12 +8,15 @@ import sys
 import unittest
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 SPHINX_SRC = ROOT / "docs" / "sphinx"
 
 
 class TestDocsBuild(unittest.TestCase):
     def test_sphinx_build_succeeds(self) -> None:
+        pytest.importorskip("sphinx")
         out = SPHINX_SRC / "_build" / "html_test"   # под _build/ (gitignored)
         r = subprocess.run(
             [sys.executable, "-m", "sphinx", "-b", "html", str(SPHINX_SRC), str(out)],
