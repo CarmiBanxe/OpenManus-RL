@@ -47,7 +47,8 @@
 
 ## Ограничения (осознанные)
 
-- **streaming + tools не совмещены в одном вызове**: `chat()` = tools (non-stream, надёжно), `stream()` = SSE без tools (streaming tool_calls на шлюзе ненадёжны — приходят как JSON в content).
+- ✅ ~~streaming + tools не совмещены~~ **— СНЯТО в S20**: `stream()` теперь resolve-ит
+  инструменты non-stream (надёжные tool_calls), затем стримит финал. `chat()` — тоже tools.
 - **Память по умолчанию `:memory:`** (не переживает рестарт) — для персистентности задать `memory_db` = файл.
 - **Reasoning-модели (smart/fast) медленны** (adapter_chat ~56s): часть бюджета уходит в `reasoning_content` (флаг `include_reasoning`).
 - Non-master ключи к шлюзу → `400 "No connected db"` (LiteLLM в no-SQL-DB режиме) — by design, не баг движка.

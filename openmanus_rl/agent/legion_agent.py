@@ -38,6 +38,7 @@ class LegionAgent:
         self.stream_adapter = StreamingLiteLLMAdapter(cfg)
         # под-адаптеры без своей памяти — агент централизует persist.
         self.tool_adapter = ToolCallingAdapter(cfg, registry=registry) if self.config.tools else None
+        self.last_tools_used: List[Dict[str, Any]] = []
 
     def _build_backend(self):
         if self.config.rag:
@@ -82,10 +83,14 @@ class LegionAgent:
         return {"content": content, "tools_used": tools_used}
 
     async def stream(self, message: str, **kwargs: Any) -> AsyncGenerator[str, None]:
-        """Стриминг ответа с RAG+памятью (без tools — см. S15)."""
+        """Стриминг ответа с RAG+памятью и (S20) tools: resolve non-stream -> стрим финала."""
         full = self._prepare(message)
+        if self.tool_adapter is not None:
+            stream_msgs, self.last_tools_used = self.tool_adapter.resolve(full, **kwargs)
+        else:
+            stream_msgs, self.last_tools_used = full, []
         parts: List[str] = []
-        async for chunk in self.stream_adapter.stream_chat(full, **kwargs):
+        async for chunk in self.stream_adapter.stream_chat(stream_msgs, **kwargs):
             parts.append(chunk)
             yield chunk
         self._finish("".join(parts))
