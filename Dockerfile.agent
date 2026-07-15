@@ -1,0 +1,22 @@
+# LegionAgent REST API — image (private Legion contour, S18)
+FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt "uvicorn[standard]"
+
+COPY . .
+
+ENV PYTHONPATH=/app
+# Модель/RAG/tools/секрет — только через env (LEGION_MODEL/LEGION_RAG/LEGION_TOOLS/
+# LEGION_API_KEY/LITELLM_MASTER_KEY). Ключи в образ НЕ пекутся.
+
+EXPOSE 8090
+
+# В контейнере bind 0.0.0.0; наружу — ТОЛЬКО через compose-маппинг на 127.0.0.1 (S-18).
+CMD ["uvicorn", "openmanus_rl.api.agent_server:app", "--host", "0.0.0.0", "--port", "8090"]

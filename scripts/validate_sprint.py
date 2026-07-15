@@ -90,6 +90,9 @@ SUITES: Dict[str, List[str]] = {
     "agent": [
         "tests/integration/test_legion_agent.py",
     ],
+    "entrypoint": [
+        "tests/integration/test_agent_server.py",
+    ],
 }
 
 _COUNT_RE = {
