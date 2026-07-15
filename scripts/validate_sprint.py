@@ -108,6 +108,9 @@ SUITES: Dict[str, List[str]] = {
     "compose": [
         "tests/integration/test_compose.py",
     ],
+    "eval-ext": [
+        "tests/integration/test_eval_thresholds.py",
+    ],
 }
 
 _COUNT_RE = {

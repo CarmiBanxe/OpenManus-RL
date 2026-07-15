@@ -68,7 +68,10 @@
 3. ✅ **Prompt/persona-слой** — сделано (**S22**): `PersonaConfig`/PERSONAS + операционные guardrails (S-18: без контент-цензуры).
 4. ✅ **compose-сервис** — сделано (**S23**): `docker-compose.agent.yml` (127.0.0.1-only,
    host.docker.internal, секреты из env, persist-volume; `docker compose config` валиден).
-5. **Расширить eval**: live-набор на memory/RAG/agent-recall + пороги регрессии в CI.
+5. ✅ **Расширить eval** — сделано (**S24**): live-наборы agent-recall/RAG (Ollama) +
+   `RegressionThresholds` (min success-rate / max p95/mean) с exit-code гейтом для CI.
+
+**Roadmap полностью закрыт (S20–S24).**
 
 ---
 *S9–S19: perf → adapter → observability → streaming → memory → RAG → tools → eval → agent-фасад → REST/CLI/Docker → security. Всё зелёное, влито в `main`, запушено на форк.*
