@@ -99,6 +99,9 @@ SUITES: Dict[str, List[str]] = {
     "stream-tools": [
         "tests/integration/test_streaming_tools.py",
     ],
+    "sessions": [
+        "tests/integration/test_session_manager.py",
+    ],
 }
 
 _COUNT_RE = {
