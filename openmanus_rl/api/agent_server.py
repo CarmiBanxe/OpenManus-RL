@@ -30,6 +30,9 @@ def _server_config() -> Dict[str, Any]:
         return os.environ.get(name, "").lower() in ("1", "true", "yes")
     return {
         "model": os.environ.get("LEGION_MODEL", "smart"),
+        # S23: шлюз/Ollama конфигурируемы (в контейнере -> host.docker.internal).
+        "base_url": os.environ.get("LEGION_BASE_URL", "http://localhost:4000"),
+        "embed_host": os.environ.get("LEGION_EMBED_HOST", "localhost"),
         "rag": _b("LEGION_RAG"),
         "tools": _b("LEGION_TOOLS"),
         "memory": os.environ.get("LEGION_MEMORY", "1").lower() in ("1", "true", "yes"),

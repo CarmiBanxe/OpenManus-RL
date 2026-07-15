@@ -105,6 +105,9 @@ SUITES: Dict[str, List[str]] = {
     "persona": [
         "tests/integration/test_persona.py",
     ],
+    "compose": [
+        "tests/integration/test_compose.py",
+    ],
 }
 
 _COUNT_RE = {

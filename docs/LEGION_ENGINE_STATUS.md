@@ -66,7 +66,8 @@
 1. ✅ **streaming+tools в одном потоке** — сделано (**S20**): resolve non-stream → стрим финала.
 2. ✅ **Персистентная память** — сделано (**S21**): файловый `memory_db` + `SessionManager` TTL/лимит.
 3. ✅ **Prompt/persona-слой** — сделано (**S22**): `PersonaConfig`/PERSONAS + операционные guardrails (S-18: без контент-цензуры).
-4. **compose-сервис** для `agent_server` (маппинг на 127.0.0.1) + `/security/audit` в мониторинг.
+4. ✅ **compose-сервис** — сделано (**S23**): `docker-compose.agent.yml` (127.0.0.1-only,
+   host.docker.internal, секреты из env, persist-volume; `docker compose config` валиден).
 5. **Расширить eval**: live-набор на memory/RAG/agent-recall + пороги регрессии в CI.
 
 ---

@@ -49,8 +49,9 @@ class LegionAgent:
         if self.config.rag:
             from openmanus_rl.memory.embeddings import OllamaEmbeddingProvider
             from openmanus_rl.memory.semantic_memory import SemanticMemory
-            return SemanticMemory(OllamaEmbeddingProvider(self.config.embed_model),
-                                  self.config.memory_db)
+            return SemanticMemory(
+                OllamaEmbeddingProvider(self.config.embed_model, host=self.config.embed_host),
+                self.config.memory_db)
         return SQLiteMemory(self.config.memory_db)
 
     def is_available(self) -> bool:

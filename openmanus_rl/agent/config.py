@@ -19,6 +19,7 @@ class AgentConfig:
     rag: bool = False
     rag_k: int = 5
     embed_model: str = "nomic-embed-text"
+    embed_host: str = "localhost"  # S23: для контейнера -> host.docker.internal
     # инструменты (S15)
     tools: bool = False
     max_tool_iters: int = 5
