@@ -2,7 +2,7 @@
 Аналитический решатель Remizov — стохастические ODE/PDE для принятия решений
 """
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 

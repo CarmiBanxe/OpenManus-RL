@@ -4,7 +4,6 @@ Behavioral decision making models
 
 import logging
 from typing import List, Dict, Any, Optional
-import numpy as np
 
 from .types import DecisionOption
 

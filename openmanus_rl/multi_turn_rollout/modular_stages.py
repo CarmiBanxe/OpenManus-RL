@@ -6,7 +6,7 @@ Integrates with the new octotools tool system.
 
 import re
 import json
-from typing import Dict, List, Optional, Any
+from typing import Dict, Optional, Any
 
 from openmanus_rl.memory.file_memory import FileMemory
 from .tool_integration import GLOBAL_TOOL_REGISTRY, create_simple_tool_wrappers

@@ -4,8 +4,7 @@ Bellman equation solver for sequential decision making
 """
 
 import logging
-from typing import Dict, Any, List, Optional
-import numpy as np
+from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
 

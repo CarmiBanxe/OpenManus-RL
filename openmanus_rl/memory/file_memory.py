@@ -3,7 +3,7 @@ Extended memory system with file persistence (memory.md).
 Builds on SimpleMemory to add query and storage capabilities.
 """
 
-from typing import List, Dict, Any, Tuple, Optional
+from typing import List, Dict, Any
 from .memory import SimpleMemory
 
 

@@ -183,7 +183,6 @@ def create_simple_tool_wrappers(registry: ToolRegistry) -> Dict[str, Any]:
 GLOBAL_TOOL_REGISTRY = ToolRegistry()
 
 # Auto-discover tools on import
-import os
 tools_path = os.path.join(os.path.dirname(__file__), '..', 'tools')
 if os.path.exists(tools_path):
     GLOBAL_TOOL_REGISTRY.discover_tools(tools_path)

@@ -3,7 +3,7 @@ Core Decision Framework for OpenManus RL
 """
 
 import logging
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 
 from .types import DecisionOption
 from .utility import UtilityCalculator

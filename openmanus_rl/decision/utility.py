@@ -4,7 +4,7 @@ Utility calculation module for decision theory
 """
 
 import logging
-from typing import List, Dict, Any, Optional, Callable
+from typing import List, Dict, Any, Callable
 import numpy as np
 
 logger = logging.getLogger(__name__)

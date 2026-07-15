@@ -7,7 +7,6 @@ import time
 from openmanus_rl.tools.base import BaseTool
 from PIL import Image, ImageOps
 
-import os
 # Suppress stderr by redirecting it to /dev/null
 import sys
 import re

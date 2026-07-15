@@ -1,7 +1,6 @@
 import torch
 import numpy as np
-import random
-from typing import List, Tuple, Dict
+from typing import List, Dict
 import math
 from PIL import Image
 from verl import DataProto
