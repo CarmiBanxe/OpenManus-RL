@@ -47,7 +47,7 @@ dependencies = [
 # Optional dependencies (extras_require in setup.py)
 [project.optional-dependencies]
 test = [
-  "pytest", "yapf"
+  "pytest", "pytest-cov", "yapf"
 ]
 
 # URLs
@@ -77,3 +77,12 @@ verl = [
   "version/*",
   "trainer/config/*.yaml"
 ]
+
+# -------------------------------
+# tool.pytest.ini_options — SAFE-PORT quality-gate (PROP-2026-0714-001, 2026-07-15)
+# Coverage target: openmanus_rl/ (Legion module — NOT banxe services/api/src).
+# Threshold: 20% (advisory floor; see proposal for rationale).
+# -------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=openmanus_rl --cov-report=term-missing --cov-fail-under=20 -q"
