@@ -1,9 +1,9 @@
 # quality-gate.yml — Legion / OpenManus
-# SAFE-PORT advisory quality-gate (PROP-2026-0714-001, 2026-07-15)
-# Mode: ADVISORY — all gate steps use continue-on-error: true.
+# SAFE-PORT quality-gate (PROP-2026-0714-001, 2026-07-15)
+# Mode: MIXED — lint/format/semgrep advisory; coverage/test step BLOCKING.
 # No Banxe-specific rules, no FCA invariants, no banxe semgrep rulesets.
 
-name: quality-gate (advisory)
+name: quality-gate
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,9 +17,9 @@ on:
 
 jobs:
   quality-gate:
-    name: Quality Gate (advisory — non-blocking)
+    name: Quality Gate (lint advisory | coverage BLOCKING)
     runs-on: ubuntu-latest
-    continue-on-error: true  # advisory: never blocks merge
+    # No job-level continue-on-error: the blocking test step can fail the workflow.
 
     steps:
       - uses: actions/checkout@v4
@@ -34,15 +34,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff pytest pytest-cov
 
-      - name: Lint (ruff check)
+      - name: Lint (ruff check) [advisory]
         continue-on-error: true
         run: ruff check .
 
-      - name: Format check (ruff format)
+      - name: Format check (ruff format) [advisory]
         continue-on-error: true
         run: ruff format --check .
 
-      - name: SAST (semgrep — generic rules, advisory)
+      - name: SAST (semgrep — generic rules) [advisory]
         continue-on-error: true
         run: |
           pip install semgrep
@@ -52,6 +52,5 @@ jobs:
         continue-on-error: true
         run: pip install -e ".[test]" || pip install pytest pytest-cov
 
-      - name: Tests + coverage (floor 20%, advisory)
-        continue-on-error: true
-        run: pytest --cov=openmanus_rl --cov-report=term-missing --cov-fail-under=20 -q
+      - name: Tests + coverage (floor 35%, BLOCKING)
+        run: pytest --cov=openmanus_rl --cov-report=term-missing --cov-fail-under=35 -q

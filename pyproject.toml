@@ -81,7 +81,7 @@ verl = [
 # -------------------------------
 # tool.pytest.ini_options — SAFE-PORT quality-gate (PROP-2026-0714-001, 2026-07-15)
 # Coverage target: openmanus_rl/ (Legion module — NOT banxe services/api/src).
-# Threshold: 20% (advisory floor; see proposal for rationale).
+# Threshold: 35% (actual ~42%, buffer for flaky)
 # -------------------------------
 # -------------------------------
 # tool.ruff — SAFE-PORT quality-gate (PROP-2026-0714-001)
@@ -97,4 +97,4 @@ extend-exclude = ["openmanus_rl/environments/env_package"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=openmanus_rl --cov-report=term-missing --cov-fail-under=20 -q"
+addopts = "--cov=openmanus_rl --cov-report=term-missing --cov-fail-under=35 -q"

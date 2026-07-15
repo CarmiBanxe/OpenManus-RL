@@ -15,12 +15,12 @@ test:
 	pytest -q
 
 test-cov:
-	pytest --cov=openmanus_rl --cov-report=term-missing --cov-fail-under=20 -q
+	pytest --cov=openmanus_rl --cov-report=term-missing --cov-fail-under=35 -q
 
 # Advisory quality-gate: semgrep uses '|| true' so it never hard-fails this target.
-# CI runs this with continue-on-error: true for the same reason.
+# Coverage floor is 35% (actual ~42%, ~7pp buffer). CI test step is blocking.
 quality-gate:
 	ruff check .
 	ruff format --check .
 	semgrep --config auto . || true
-	pytest --cov=openmanus_rl --cov-fail-under=20 -q
+	pytest --cov=openmanus_rl --cov-fail-under=35 -q
