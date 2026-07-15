@@ -15,6 +15,7 @@ from openmanus_rl.memory.conversation_memory import ConversationMemory
 from openmanus_rl.memory.sqlite_memory import SQLiteMemory
 
 from .config import AgentConfig
+from .persona import Guardrails, resolve_system_prompt
 
 
 class LegionAgent:
@@ -39,6 +40,10 @@ class LegionAgent:
         # под-адаптеры без своей памяти — агент централизует persist.
         self.tool_adapter = ToolCallingAdapter(cfg, registry=registry) if self.config.tools else None
         self.last_tools_used: List[Dict[str, Any]] = []
+        # S22: persona (system-prompt) + операционные guardrails.
+        self.system_prompt = resolve_system_prompt(self.config.persona, self.config.system_prompt)
+        self.guardrails = Guardrails(max_input_chars=self.config.max_input_chars,
+                                     deny_patterns=self.config.deny_patterns)
 
     def _build_backend(self):
         if self.config.rag:
@@ -64,10 +69,12 @@ class LegionAgent:
             self.memory.trim_if_needed()
 
     def _prepare(self, message: str) -> List[Dict[str, str]]:
+        self.guardrails.check(message)  # S22: raise GuardrailError при нарушении
         context = self._context(message)
         if self.memory is not None:
             self.memory.store_turn("user", message)
-        return context + [{"role": "user", "content": message}]
+        system = [{"role": "system", "content": self.system_prompt}] if self.system_prompt else []
+        return system + context + [{"role": "user", "content": message}]
 
     def chat(self, message: str, **kwargs: Any) -> Dict[str, Any]:
         """Полный non-stream пайплайн: RAG-контекст -> (tool-loop) -> ответ -> persist."""

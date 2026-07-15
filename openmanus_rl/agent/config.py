@@ -1,6 +1,6 @@
 """Единая конфигурация агента (все слои в одном месте)."""
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -22,6 +22,11 @@ class AgentConfig:
     # инструменты (S15)
     tools: bool = False
     max_tool_iters: int = 5
+    # persona / prompt / guardrails (S22)
+    persona: Optional[str] = None          # имя встроенной персоны (assistant/concise/coder/analyst)
+    system_prompt: Optional[str] = None    # явный system-prompt (приоритетнее persona)
+    max_input_chars: int = 100_000         # операционный guardrail (не цензура)
+    deny_patterns: List[str] = field(default_factory=list)  # opt-in оператором; дефолт пусто
     # observability (S11)
     enable_observability: bool = False
     extra: Dict[str, Any] = field(default_factory=dict)

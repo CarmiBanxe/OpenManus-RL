@@ -63,9 +63,9 @@
 
 ## Рекомендации по развитию
 
-1. **streaming+tools в одном потоке**: resolve-tools non-stream → затем стримить финал (устранить ограничение S15/S17).
-2. **Персистентная память**: дефолтный файловый `memory_db` + очистка/TTL сессий на сервере.
-3. **Prompt/persona-слой**: system-prompt шаблоны в `AgentConfig` (роли, guardrails).
+1. ✅ **streaming+tools в одном потоке** — сделано (**S20**): resolve non-stream → стрим финала.
+2. ✅ **Персистентная память** — сделано (**S21**): файловый `memory_db` + `SessionManager` TTL/лимит.
+3. ✅ **Prompt/persona-слой** — сделано (**S22**): `PersonaConfig`/PERSONAS + операционные guardrails (S-18: без контент-цензуры).
 4. **compose-сервис** для `agent_server` (маппинг на 127.0.0.1) + `/security/audit` в мониторинг.
 5. **Расширить eval**: live-набор на memory/RAG/agent-recall + пороги регрессии в CI.
 

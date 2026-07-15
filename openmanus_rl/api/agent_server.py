@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from openmanus_rl.agent import AgentConfig, LegionAgent
+from openmanus_rl.agent.persona import GuardrailError
 from openmanus_rl.agent.session_manager import SessionManager
 from openmanus_rl.api.security import SecurityAudit, install_security
 
@@ -35,6 +36,11 @@ def _server_config() -> Dict[str, Any]:
         # S21: по умолчанию ПЕРСИСТЕНТНЫЙ файловый db (общий, session_id изолирует).
         "memory_db": os.environ.get("LEGION_MEMORY_DB", "legion_memory.db"),
         "enable_observability": _b("LEGION_OBSERVABILITY"),
+        # S22: persona / guardrails из env (deny-list пуст по умолчанию — S-18).
+        "persona": os.environ.get("LEGION_PERSONA") or None,
+        "system_prompt": os.environ.get("LEGION_SYSTEM_PROMPT") or None,
+        "max_input_chars": int(os.environ.get("LEGION_MAX_INPUT", "100000")),
+        "deny_patterns": [p for p in os.environ.get("LEGION_DENY", "").split(",") if p],
     }
 
 
@@ -77,6 +83,8 @@ def create_agent_app(config: Optional[Dict[str, Any]] = None) -> FastAPI:
     def chat(req: ChatRequest, _: None = Depends(require_auth)):
         try:
             return get_agent(req.session_id).chat(req.message, **(req.params or {}))
+        except GuardrailError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
         except Exception as exc:  # noqa: BLE001
             raise HTTPException(status_code=500, detail=f"chat failed: {exc}")
 

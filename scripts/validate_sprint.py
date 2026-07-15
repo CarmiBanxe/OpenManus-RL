@@ -102,6 +102,9 @@ SUITES: Dict[str, List[str]] = {
     "sessions": [
         "tests/integration/test_session_manager.py",
     ],
+    "persona": [
+        "tests/integration/test_persona.py",
+    ],
 }
 
 _COUNT_RE = {
