@@ -93,6 +93,24 @@ SUITES: Dict[str, List[str]] = {
     "entrypoint": [
         "tests/integration/test_agent_server.py",
     ],
+    "security": [
+        "tests/integration/test_security.py",
+    ],
+    "stream-tools": [
+        "tests/integration/test_streaming_tools.py",
+    ],
+    "sessions": [
+        "tests/integration/test_session_manager.py",
+    ],
+    "persona": [
+        "tests/integration/test_persona.py",
+    ],
+    "compose": [
+        "tests/integration/test_compose.py",
+    ],
+    "eval-ext": [
+        "tests/integration/test_eval_thresholds.py",
+    ],
 }
 
 _COUNT_RE = {

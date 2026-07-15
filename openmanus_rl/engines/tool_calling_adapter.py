@@ -8,7 +8,7 @@ tool-решения делаем non-stream, инструменты исполн
 Опционально сохраняем обмен в ConversationMemory (S13).
 """
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from openmanus_rl.engines.enhanced_factory import LiteLLMAdapter
 from openmanus_rl.tool_calling.builtins import register_builtins
@@ -92,6 +92,49 @@ class ToolCallingAdapter:
             self.memory.trim_if_needed()
         return {"content": content, "tools_used": tools_used,
                 "iterations": i + 1, "messages": msgs, "truncated": True}
+
+
+    def resolve(self, messages: List[Dict[str, Any]], model: Optional[str] = None,
+                tool_choice: str = "auto", **kwargs: Any) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """Прогнать tool-loop БЕЗ генерации финала (для последующего стриминга финала).
+
+        Возвращает (messages_с_tool-результатами, tools_used). messages заканчиваются
+        последним tool-результатом (или = исходным, если инструменты не звались) —
+        финальный ответ НЕ генерируется, чтобы его можно было стримить отдельно.
+        """
+        msgs: List[Dict[str, Any]] = [dict(m) for m in messages]
+        tools_used: List[Dict[str, Any]] = []
+        seen: set = set()
+        for _ in range(self.max_iters):
+            result = self.llm._make_request("/v1/chat/completions", {
+                "model": model or self.model, "messages": msgs, "stream": False,
+                "tools": self.registry.schemas(), "tool_choice": tool_choice,
+                "temperature": kwargs.get("temperature", 0),
+                "max_tokens": kwargs.get("max_tokens", 1024)})
+            msg = result["choices"][0]["message"]
+            tool_calls = msg.get("tool_calls")
+            if not tool_calls:
+                return msgs, tools_used
+            msgs.append({"role": "assistant", "content": msg.get("content"), "tool_calls": tool_calls})
+            fresh = False
+            for tc in tool_calls:
+                fn = tc.get("function", {})
+                name = fn.get("name", "")
+                try:
+                    args = json.loads(fn.get("arguments") or "{}")
+                except json.JSONDecodeError:
+                    args = {}
+                sig = (name, json.dumps(args, sort_keys=True))
+                if sig not in seen:
+                    fresh = True
+                    seen.add(sig)
+                output = self.executor.execute(name, args)
+                tools_used.append({"name": name, "arguments": args, "output": output})
+                msgs.append({"role": "tool", "tool_call_id": tc.get("id"),
+                             "name": name, "content": output})
+            if not fresh:
+                return msgs, tools_used
+        return msgs, tools_used
 
 
 def create_tool_calling_adapter(config: Optional[Dict[str, Any]] = None,

@@ -1,0 +1,34 @@
+# LegionAgent REST service (S23) — приватный Legion-контур (S-18).
+# Запуск: LITELLM_MASTER_KEY=... docker compose -f docker-compose.agent.yml up -d --build
+# Секреты — ТОЛЬКО из окружения/.env (в образ не пекутся). Наружу — только 127.0.0.1.
+services:
+  legion-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    image: legion-agent:latest
+    restart: unless-stopped
+    # Порт наружу ТОЛЬКО на localhost (S-18: движок не публичен).
+    ports:
+      - "127.0.0.1:8090:8090"
+    # Доступ к host-сервисам (LiteLLM :4000, Ollama :11434) с Linux.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      LEGION_MODEL: "${LEGION_MODEL:-smart}"
+      LEGION_BASE_URL: "http://host.docker.internal:4000"
+      LEGION_EMBED_HOST: "host.docker.internal"
+      LEGION_MEMORY_DB: "/data/legion_memory.db"
+      LEGION_RAG: "${LEGION_RAG:-0}"
+      LEGION_TOOLS: "${LEGION_TOOLS:-0}"
+      LEGION_SESSION_TTL: "${LEGION_SESSION_TTL:-3600}"
+      LEGION_RATE_LIMIT: "${LEGION_RATE_LIMIT:-120}"
+      # Секреты — из окружения хоста / .env, НЕ хардкод:
+      LITELLM_MASTER_KEY: "${LITELLM_MASTER_KEY:?set LITELLM_MASTER_KEY in env}"
+      LEGION_API_KEY: "${LEGION_API_KEY:-}"
+      LEGION_PERSONA: "${LEGION_PERSONA:-}"
+    volumes:
+      - legion-data:/data   # персистентная память (S21) переживает пересоздание контейнера
+
+volumes:
+  legion-data:

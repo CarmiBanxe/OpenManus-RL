@@ -15,6 +15,7 @@ from openmanus_rl.memory.conversation_memory import ConversationMemory
 from openmanus_rl.memory.sqlite_memory import SQLiteMemory
 
 from .config import AgentConfig
+from .persona import Guardrails, resolve_system_prompt
 
 
 class LegionAgent:
@@ -38,13 +39,19 @@ class LegionAgent:
         self.stream_adapter = StreamingLiteLLMAdapter(cfg)
         # под-адаптеры без своей памяти — агент централизует persist.
         self.tool_adapter = ToolCallingAdapter(cfg, registry=registry) if self.config.tools else None
+        self.last_tools_used: List[Dict[str, Any]] = []
+        # S22: persona (system-prompt) + операционные guardrails.
+        self.system_prompt = resolve_system_prompt(self.config.persona, self.config.system_prompt)
+        self.guardrails = Guardrails(max_input_chars=self.config.max_input_chars,
+                                     deny_patterns=self.config.deny_patterns)
 
     def _build_backend(self):
         if self.config.rag:
             from openmanus_rl.memory.embeddings import OllamaEmbeddingProvider
             from openmanus_rl.memory.semantic_memory import SemanticMemory
-            return SemanticMemory(OllamaEmbeddingProvider(self.config.embed_model),
-                                  self.config.memory_db)
+            return SemanticMemory(
+                OllamaEmbeddingProvider(self.config.embed_model, host=self.config.embed_host),
+                self.config.memory_db)
         return SQLiteMemory(self.config.memory_db)
 
     def is_available(self) -> bool:
@@ -63,10 +70,12 @@ class LegionAgent:
             self.memory.trim_if_needed()
 
     def _prepare(self, message: str) -> List[Dict[str, str]]:
+        self.guardrails.check(message)  # S22: raise GuardrailError при нарушении
         context = self._context(message)
         if self.memory is not None:
             self.memory.store_turn("user", message)
-        return context + [{"role": "user", "content": message}]
+        system = [{"role": "system", "content": self.system_prompt}] if self.system_prompt else []
+        return system + context + [{"role": "user", "content": message}]
 
     def chat(self, message: str, **kwargs: Any) -> Dict[str, Any]:
         """Полный non-stream пайплайн: RAG-контекст -> (tool-loop) -> ответ -> persist."""
@@ -82,10 +91,14 @@ class LegionAgent:
         return {"content": content, "tools_used": tools_used}
 
     async def stream(self, message: str, **kwargs: Any) -> AsyncGenerator[str, None]:
-        """Стриминг ответа с RAG+памятью (без tools — см. S15)."""
+        """Стриминг ответа с RAG+памятью и (S20) tools: resolve non-stream -> стрим финала."""
         full = self._prepare(message)
+        if self.tool_adapter is not None:
+            stream_msgs, self.last_tools_used = self.tool_adapter.resolve(full, **kwargs)
+        else:
+            stream_msgs, self.last_tools_used = full, []
         parts: List[str] = []
-        async for chunk in self.stream_adapter.stream_chat(full, **kwargs):
+        async for chunk in self.stream_adapter.stream_chat(stream_msgs, **kwargs):
             parts.append(chunk)
             yield chunk
         self._finish("".join(parts))

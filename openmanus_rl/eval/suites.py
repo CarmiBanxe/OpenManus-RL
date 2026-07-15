@@ -114,3 +114,44 @@ def build_live_llm_suite(model: str = "smart") -> EvalSuite:
         any(t["output"] == "4183" for t in r.get("tools_used", [])),
         component="live_llm"))
     return suite
+
+
+def build_agent_recall_suite(model: str = "smart") -> EvalSuite:
+    """Live: агент помнит факт между turn'ами (memory через фасад)."""
+    from openmanus_rl.agent import create_agent
+
+    def recall():
+        agent = create_agent({"model": model, "memory": True, "extra": {"include_reasoning": True}})
+        agent.chat("My name is Zara. Acknowledge.", max_tokens=200)
+        return agent.chat("What is my name?", max_tokens=200)["content"]
+
+    suite = EvalSuite("agent_recall")
+    suite.add(EvalCase("recalls_name", run=recall,
+                       check=lambda out: "zara" in (out or "").lower(), component="agent_recall"))
+    return suite
+
+
+def build_rag_live_suite() -> EvalSuite:
+    """Live: семантич. retrieval на РЕАЛЬНЫХ Ollama-эмбеддингах (по смыслу, не substring)."""
+    from openmanus_rl.memory.embeddings import OllamaEmbeddingProvider
+    from openmanus_rl.memory.semantic_memory import SemanticMemory
+
+    def semantic():
+        m = SemanticMemory(OllamaEmbeddingProvider("nomic-embed-text"), ":memory:")
+        m.add_turn("s", "user", "My favorite programming language is Python")
+        m.add_turn("s", "user", "I enjoy hiking in the mountains on weekends")
+        hits = m.semantic_search("s", "what do I write code with?", 1)
+        m.close()
+        return hits
+
+    suite = EvalSuite("rag_live")
+    suite.add(EvalCase("semantic_retrieval", run=semantic,
+                       check=lambda h: bool(h) and "Python" in h[0]["content"], component="rag_live"))
+    return suite
+
+
+LIVE_COMPONENTS = {"live_llm", "agent_recall", "rag_live"}
+
+
+def build_live_suites(model: str = "smart") -> List[EvalSuite]:
+    return [build_live_llm_suite(model), build_agent_recall_suite(model), build_rag_live_suite()]
